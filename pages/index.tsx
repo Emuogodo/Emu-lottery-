@@ -1,4 +1,4 @@
-import { useAddress, useContract, useContractData } from '@thirdweb-dev/react'
+import { useAddress, useContract, useContractCall, useContractData } from '@thirdweb-dev/react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { ethers } from 'ethers'
 import { CURRENCY } from '../constants'
 import CountdownTimer from '../components/CountdownTimer'
+import toast from 'react-hot-toast'
 
 const Home: NextPage = () => {
 
@@ -22,6 +23,33 @@ const Home: NextPage = () => {
   const { data: ticketPrice } = useContractData(contract, "ticketPrice")
   const { data: ticketCommission } = useContractData(contract, "ticketCommission")
   const { data: expiration } = useContractData(contract, "expiration")
+
+  const { mutateAsync: BuyTickets } = useContractCall(contract, "BuyTickets")
+
+
+  const handleBuyTicket = async () => {
+    if (!ticketPrice) return;
+
+    const notification = toast.loading("Buying your tickets...");
+
+    try {
+      const data = await BuyTickets([{
+        value: ethers.utils.parseEther(
+          (Number(ethers.utils.formatEther(ticketPrice)) * quantity).toString()
+        )
+      }])
+
+      toast.success("Tickets purchased successfully", {
+        id: notification
+      })
+
+    } catch (error) {
+      toast.error("Whoops something went wrong!", {
+        id: notification
+      })
+
+    }
+  }
 
   if (isLoading) return <Loading />
 
@@ -110,6 +138,8 @@ const Home: NextPage = () => {
                   expiration?.toString() < Date.now().toString() ||
                   remainingTickets?.toNumber() === 0
                 }
+
+                onClick={handleBuyTicket}
                 className='mt-5 w-full bg-gradient-to-br from-orange-500 to-emerald-600 px-10 py-5 text-white shadow-xl rounded-md disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed disabled:text-gray-100'
               >
                 Buy Ticket
