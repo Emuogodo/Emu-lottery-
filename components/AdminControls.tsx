@@ -79,11 +79,11 @@ const AdminControls = () => {
 			toast.success("All refunded successfully!", {
 				id: notification
 			})
-		} catch (error) {
+		} catch (error: any) {
 			toast.error("Whoops something went wrong!", {
 				id: notification
 			})
-			console.error("contact call failure", error)
+			console.error("contact call failure", error.message)
 		}
 	}
 
