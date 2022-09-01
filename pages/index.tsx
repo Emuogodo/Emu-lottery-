@@ -9,6 +9,8 @@ import { ethers } from 'ethers'
 import { CURRENCY } from '../constants'
 import CountdownTimer from '../components/CountdownTimer'
 import toast from 'react-hot-toast'
+import Marquee from "react-fast-marquee";
+import AdminControls from '../components/AdminControls'
 
 const Home: NextPage = () => {
 
@@ -26,6 +28,9 @@ const Home: NextPage = () => {
   const { data: expiration } = useContractData(contract, "expiration")
   const { data: tickets } = useContractData(contract, "getTickets")
   const { data: winnings } = useContractData(contract, "getWinningsForAddress", address)
+  const { data: lastWinner } = useContractData(contract, "lastWinner")
+  const { data: lastWinnerAmount } = useContractData(contract, "lastWinnerAmount")
+  const { data:isLotteryOperator } = useContractData(contract, "lotteryOperator")
 
   const { mutateAsync: BuyTickets } = useContractCall(contract, "BuyTickets")
   const { mutateAsync: WithdrawWinnings } = useContractCall(contract, "WithdrawWinnings")
@@ -65,14 +70,13 @@ const Home: NextPage = () => {
       toast.success("Winnings withdrawn successfully", {
         id: notification
       })
-      
+
     } catch (error) {
       toast.error("Whoops something went wrong!", {
         id: notification
       })
       console.error("contact call failure", error)
     }
-
   }
 
   useEffect(() => {
@@ -99,6 +103,18 @@ const Home: NextPage = () => {
 
       <div className='flex-1'>
         <Header />
+
+        <Marquee className='bg-[#0A1F1C p-5 mb-5]' gradient={false} speed={100}  >
+          <div className='flex space-x-2 mx-10'>
+            <h4 className='text-white font-bold'>Last Winner: {lastWinner?.toString()}  </h4>
+            <h4 className='text-white font-bold'>Previous Winnings: {lastWinnerAmount && ethers.utils.formatEther(lastWinnerAmount?.toString())} {CURRENCY}</h4>
+          </div>
+        </Marquee>
+        {isLotteryOperator === address && (
+          <div className='flex justify-center'>
+            <AdminControls />
+          </div>
+        )} 
 
         {winnings > 0 && (
           <div className='max-w-md md:max-w-2xl lg:max-w-4xl mx-auto'>
