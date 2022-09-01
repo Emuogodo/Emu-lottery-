@@ -42,6 +42,7 @@ const Home: NextPage = () => {
       toast.success("Tickets purchased successfully", {
         id: notification
       })
+      setQuantity(1);
 
     } catch (error) {
       toast.error("Whoops something went wrong!", {
