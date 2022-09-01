@@ -13,7 +13,7 @@ const Login = () => {
 					src="https://i.imgur.com/4h7mAu7.png"
 					alt=""
 				/>
-				<h1 className='text-6xl text-white font-bold'>THE PAPAFAM DRAW</h1>
+				<h1 className='text-6xl text-white font-bold'>THE REACTIVEDEV DRAW</h1>
 				<h2 className='text-white '>Get Started By logging in with your MetaMask</h2>
 				<button onClick={connectWithMetaMask} className='bg-white px-8 py-5 mt-10 rounded-lg shadow-lg font-bold'>Login with MetaMask</button>
 			</div>
