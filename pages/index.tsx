@@ -4,7 +4,7 @@ import Head from 'next/head'
 import Header from '../components/Header'
 import Login from '../components/Login'
 import Loading from '../components/Loading'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import { CURRENCY } from '../constants'
 import CountdownTimer from '../components/CountdownTimer'
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast'
 const Home: NextPage = () => {
 
   const [quantity, setQuantity] = useState<number>(1)
+  const [userTickets, setUserTickets] = useState<number>(0)
 
   const address = useAddress();
   const { contract, isLoading } = useContract(
@@ -23,8 +24,11 @@ const Home: NextPage = () => {
   const { data: ticketPrice } = useContractData(contract, "ticketPrice")
   const { data: ticketCommission } = useContractData(contract, "ticketCommission")
   const { data: expiration } = useContractData(contract, "expiration")
+  const { data: tickets } = useContractData(contract, "getTickets")
+  const { data: winnings } = useContractData(contract, "getWinningsForAddress", address)
 
   const { mutateAsync: BuyTickets } = useContractCall(contract, "BuyTickets")
+  const { mutateAsync: WithdrawWinnings } = useContractCall(contract, "WithdrawWinnings")
 
 
   const handleBuyTicket = async () => {
@@ -52,6 +56,36 @@ const Home: NextPage = () => {
     }
   }
 
+  const handleWithDrawWinnings = async () => {
+    const notification = toast.loading("Withdrawing winnings...");
+
+    try {
+      const data = await WithdrawWinnings([{}]);
+
+      toast.success("Winnings withdrawn successfully", {
+        id: notification
+      })
+      
+    } catch (error) {
+      toast.error("Whoops something went wrong!", {
+        id: notification
+      })
+      console.error("contact call failure", error)
+    }
+
+  }
+
+  useEffect(() => {
+    if (!tickets) return
+
+    const totalTickets: string[] = tickets;
+    const noOfUserTickets = totalTickets.reduce((total, ticketAddress) => (ticketAddress === address ? total + 1 : total), 0)
+
+    setUserTickets(noOfUserTickets);
+
+  }, [tickets, address])
+
+
   if (isLoading) return <Loading />
 
   if (!address) return <Login />
@@ -65,6 +99,18 @@ const Home: NextPage = () => {
 
       <div className='flex-1'>
         <Header />
+
+        {winnings > 0 && (
+          <div className='max-w-md md:max-w-2xl lg:max-w-4xl mx-auto'>
+            <button onClick={handleWithDrawWinnings} className="p-5 bg-gradient-to-b from-orange-500 to-emerald-600 animate-pulse text-center rounded-xl w-full">
+              <p className='font-bold'>Winner Winner Chicken Dinner!</p>
+              <p>Total Winnings: {ethers.utils.formatEther(winnings.toString())}</p>
+              <br />
+              <p className='font-semibold'>Click here to withdraw</p>
+            </button>
+          </div>
+
+        )}
 
         {/* The Next Draw box */}
         <div className='space-y-5 md:space-y-0 m-5 md:flex md:flex-row items-start justify-center md:space-x-5'>
@@ -143,18 +189,28 @@ const Home: NextPage = () => {
                 onClick={handleBuyTicket}
                 className='mt-5 w-full bg-gradient-to-br from-orange-500 to-emerald-600 px-10 py-5 text-white shadow-xl rounded-md disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed disabled:text-gray-100'
               >
-                Buy Ticket
+                Buy {quantity} tickets for {
+                  ticketPrice && Number(ethers.utils.formatEther(ticketPrice.toString())) * quantity
+                } {CURRENCY}
               </button>
 
             </div>
-          </div>
 
+            {
+              userTickets > 0 && (
+                <div className='stats'>
+                  <p className='text-lg mb-2'>you have {userTickets} Tickets in this draw</p>
+                  <div className='flex max-w-sm flex-wrap gap-2'>
+                    {Array(userTickets).fill("").map((_, index) => (
+                      <p key={index} className='text-emerald-300 h-20 w-12 bg-emerald-500/30 rounded-lg flex flex-shrink items-center justify-center text-sm italic'>{index + 1}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+          </div>
         </div>
 
-        {/* The Price per ticket box */}
-        {/* <div>
-        <div></div>
-      </div> */}
 
       </div>
 
